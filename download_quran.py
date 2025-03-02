@@ -21,15 +21,15 @@ class Sura:
         self.name = name
     
     def download(self, quran_url, quran_directory):
-        with self.__file(quran_directory).open("wb") as f:
-            f.write(self.__resource(quran_url).content)
+        with self._file(quran_directory).open("wb") as f:
+            f.write(self._resource(quran_url).content)
 
-    def __resource(self, quran_url):
+    def _resource(self, quran_url):
         sura_url = f"{quran_url}{self.number:03}.mp3"
         return requests.get(sura_url)
     
 
-    def __file(self, quran_directory):
+    def _file(self, quran_directory):
         return quran_directory / f"{self.number:03} - {self.name}.mp3"
 
 
