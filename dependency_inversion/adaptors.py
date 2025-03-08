@@ -1,44 +1,10 @@
-##### BEGIN FILE libraries.py #####
-"""classes simulating libraries that send messages using different APIs
-"""
-
-class Vodafone:
-    def __init__(self, api_key):
-        self.api_key = api_key
-
-    def send_vodafone_message(self, phone_number, message):
-        print(f"Sending {message} to {phone_number} using Vodafone API")
-
-
-class Orange:
-    def __init__(self, api_key):
-        self.api_key = api_key
-
-    # note: the method name is different from the Vodafone class
-    # note: the method parameters order is different from the Vodafone class
-    def send_orange_message(self, message, phone_number):
-        print(f"Sending {message} to {phone_number} using Orange API")
-
-
-class We:
-    def __init__(self, api_key):
-        self.api_key = api_key
-
-    def send_we_message(self, phone_number, message, some_other_parameter):
-        print(
-            f"Sending {message} to {phone_number} with another parameter {some_other_parameter} using We API")
-
-##### END OF FILE adaptors.py #####
-
-##### BEGIN FILE adaptors.py #####
-
 """"
 notes:
     - all adaptors have the same method signature: send(phone_number, message)
     - each adaptor uses the corresponding API special method to send the message
 """
 
-#from libraries import Orange, Vodafone, We
+from .libraries import Orange, Vodafone, We
 
 class VodafoneAdaptor:
     def __init__(self, api_key):
@@ -90,20 +56,3 @@ class AdaptorFactory:
         if api_name == "we":
             return WeAdaptor(api_key)
         raise ValueError(f"API {api_name} not supported")
-
-##### END OF FILE adaptors.py #####
-
-##### BEGIN FILE controller.py #####
-
-# from adaptors import AdaptorFactory
-
-def controller_send_a_message(json_params):
-    phone_number = json_params['phone_number']
-    message = json_params['message']
-    
-    adaptor = AdaptorFactory.get_adaptor()
-    adaptor.send(phone_number, message)
-
-    return "Message sent successfully"
-
-##### END OF FILE controller.py #####
