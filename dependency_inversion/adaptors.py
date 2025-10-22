@@ -11,7 +11,12 @@ class VodafoneAdaptor:
         self.api_key = api_key
 
     def send(self, phone_number, message):
-        # Send message using Vodafone API
+        """Send a message using the Vodafone API.
+
+        Args:
+            phone_number (str): The phone number to send the message to.
+            message (str): The message content.
+        """
         Vodafone(self.api_key).send_vodafone_message(phone_number, message)
 
 

@@ -15,9 +15,9 @@ def update_mp3_tags(directory: Path, *, album, artist):
         try:
             audio = EasyID3(mp3_file)
             # Set title to the file name without extension
-            audio['title'] = mp3_file.stem
-            audio['album'] = album
-            audio['artist'] = artist
+            audio["title"] = mp3_file.stem
+            audio["album"] = album
+            audio["artist"] = artist
             audio.save()
             print(f"Updated tags for: {mp3_file.name}")
         except Exception as e:
