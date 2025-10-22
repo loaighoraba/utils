@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "httpx>=0.28.1",
     "mutagen>=1.47.0",
     "requests>=2.32.5",
+    "tqdm>=4.67.1",
 ]

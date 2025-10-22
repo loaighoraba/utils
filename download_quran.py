@@ -1,7 +1,10 @@
 from pathlib import Path
+import time
 import urllib3
-
+import asyncio
+import httpx
 import requests
+import tqdm
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -122,18 +125,32 @@ SURA_NAMES = [
     "الناس",
 ]
 
+MAX_CONCURRENT_DOWNLOADS = 50
+
 
 class QuranDownloader:
     def __init__(self, url, directory: Path):
         self.url = url
         self.directory = directory
 
-    def download(self):
-        for sura_number, sura_name in enumerate(SURA_NAMES, start=1):
-            sura = Sura(sura_number, sura_name)
-            sura.download(self.url, self.directory)
+    async def download(self):
+        suras = [Sura(number, name) for number, name in enumerate(SURA_NAMES, start=1)]
+        semaphore = asyncio.BoundedSemaphore(MAX_CONCURRENT_DOWNLOADS)
+        async with httpx.AsyncClient(verify=False) as client:
+            tasks = []
+            for sura in suras:
 
-        print("All downloads completed.")
+                async def download_with_metadata(sura):
+                    await sura.download(self.url, self.directory, client, semaphore)
+                    return sura
+
+                tasks.append(asyncio.create_task(download_with_metadata(sura)))
+
+            for task in tqdm.tqdm(
+                asyncio.as_completed(tasks), desc="Downloading Quran Suras"
+            ):
+                sura = await task
+                print(f"Downloaded Sura {sura.number}: {sura.name}")
 
 
 class Sura:
@@ -141,27 +158,35 @@ class Sura:
         self.number = number
         self.name = name
 
-    def download(self, quran_url, quran_directory):
-        print(f"Downloading Sura {self.number}: {self.name}")
-        with self._local_file(quran_directory).open("wb") as f:
-            f.write(self._resource(quran_url).content)
+    async def download(self, quran_url, quran_directory, client, semaphore):
+        async with semaphore:
+            # print(f"Downloading Sura {self.number}: {self.name}")
+            response = await client.get(f"{quran_url}{self.number:03}.mp3")
+            # response.raise_for_status()
+            with self._local_file(quran_directory).open("wb") as f:
+                f.write(response.content)
+
+            return
 
     def _resource(self, quran_url):
         sura_url = f"{quran_url}{self.number:03}.mp3"
-        return requests.get(sura_url, verify=False)  # Ignore SSL certificate errors
+        return requests.get(sura_url)
 
     def _local_file(self, quran_directory):
         return quran_directory / f"{self.number:03} - {self.name}.mp3"
 
 
-def main():
+async def main():
     directory = Path("/home/loai/Quran")
     directory.mkdir(parents=True, exist_ok=True)
     url = "https://download.quran.islamway.net/quran3/696/"
 
     downloader = QuranDownloader(url, directory)
-    downloader.download()
+    await downloader.download()
 
 
 if __name__ == "__main__":
-    main()
+    start_time = time.time()
+    asyncio.run(main())
+    end_time = time.time()
+    print(f"Total time taken: {end_time - start_time} seconds")
