@@ -3,7 +3,6 @@ import time
 import urllib3
 import asyncio
 import httpx
-import requests
 import tqdm
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -160,13 +159,9 @@ class Sura:
 
     async def download(self, quran_url, quran_directory, client, semaphore):
         async with semaphore:
-            # print(f"Downloading Sura {self.number}: {self.name}")
             response = await client.get(self._resource_url(quran_url))
-            # response.raise_for_status()
             with self._local_file(quran_directory).open("wb") as f:
                 f.write(response.content)
-
-            return
 
     def _resource_url(self, quran_url):
         return f"{quran_url}{self.number:03}.mp3"
