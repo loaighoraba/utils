@@ -135,15 +135,12 @@ class QuranDownloader:
     async def download(self):
         suras = [Sura(number, name) for number, name in enumerate(SURA_NAMES, start=1)]
         semaphore = asyncio.BoundedSemaphore(MAX_CONCURRENT_DOWNLOADS)
+
         async with httpx.AsyncClient(verify=False) as client:
-            tasks = []
-            for sura in suras:
-
-                async def download_with_metadata(sura):
-                    await sura.download(self.url, self.directory, client, semaphore)
-                    return sura
-
-                tasks.append(asyncio.create_task(download_with_metadata(sura)))
+            tasks = [
+                sura.download(self.url, self.directory, client, semaphore)
+                for sura in suras
+            ]
 
             for task in tqdm.tqdm(
                 asyncio.as_completed(tasks), desc="Downloading Quran Suras"
@@ -162,6 +159,8 @@ class Sura:
             response = await client.get(self._resource_url(quran_url))
             with self._local_file(quran_directory).open("wb") as f:
                 f.write(response.content)
+
+        return self
 
     def _resource_url(self, quran_url):
         return f"{quran_url}{self.number:03}.mp3"
