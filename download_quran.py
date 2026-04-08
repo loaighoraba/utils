@@ -3,137 +3,31 @@ import time
 import urllib3
 import asyncio
 import httpx
+
 import tqdm
+import os
+import json
+from dotenv import load_dotenv
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-SURA_NAMES = [
-    "الفاتحة",
-    "البقرة",
-    "آل عمران",
-    "النساء",
-    "المائدة",
-    "الأنعام",
-    "الأعراف",
-    "الأنفال",
-    "التوبة",
-    "يونس",
-    "هود",
-    "يوسف",
-    "الرعد",
-    "إبراهيم",
-    "الحجر",
-    "النحل",
-    "الإسراء",
-    "الكهف",
-    "مريم",
-    "طه",
-    "الأنبياء",
-    "الحج",
-    "المؤمنون",
-    "النور",
-    "الفرقان",
-    "الشعراء",
-    "النمل",
-    "القصص",
-    "العنكبوت",
-    "الروم",
-    "لقمان",
-    "السجدة",
-    "الأحزاب",
-    "سبأ",
-    "فاطر",
-    "يس",
-    "الصافات",
-    "ص",
-    "الزمر",
-    "غافر",
-    "فصلت",
-    "الشورى",
-    "الزخرف",
-    "الدخان",
-    "الجاثية",
-    "الأحقاف",
-    "محمد",
-    "الفتح",
-    "الحجرات",
-    "ق",
-    "الذاريات",
-    "الطور",
-    "النجم",
-    "القمر",
-    "الرحمن",
-    "الواقعة",
-    "الحديد",
-    "المجادلة",
-    "الحشر",
-    "الممتحنة",
-    "الصف",
-    "الجمعة",
-    "المنافقون",
-    "التغابن",
-    "الطلاق",
-    "التحريم",
-    "الملك",
-    "القلم",
-    "الحاقة",
-    "المعارج",
-    "نوح",
-    "الجن",
-    "المزمل",
-    "المدثر",
-    "القيامة",
-    "الإنسان",
-    "المرسلات",
-    "النبأ",
-    "النازعات",
-    "عبس",
-    "التكوير",
-    "الانفطار",
-    "المطففين",
-    "الانشقاق",
-    "البروج",
-    "الطارق",
-    "الأعلى",
-    "الغاشية",
-    "الفجر",
-    "البلد",
-    "الشمس",
-    "الليل",
-    "الضحى",
-    "الشرح",
-    "التين",
-    "العلق",
-    "القدر",
-    "البينة",
-    "الزلزلة",
-    "العاديات",
-    "القارعة",
-    "التكاثر",
-    "العصر",
-    "الهمزة",
-    "الفيل",
-    "قريش",
-    "الماعون",
-    "الكوثر",
-    "الكافرون",
-    "النصر",
-    "المسد",
-    "الإخلاص",
-    "الفلق",
-    "الناس",
-]
 
-MAX_CONCURRENT_DOWNLOADS = 50
+MAX_CONCURRENT_DOWNLOADS = 10
+
+
+load_dotenv()
 
 
 class QuranDownloader:
-    def __init__(self, url, directory: Path):
+    def __init__(self, url, directory: Path, sura_names: list[str]):
         self.url = url
         self.directory = directory
+        self.sura_names = sura_names
 
     async def download(self):
-        suras = [Sura(number, name) for number, name in enumerate(SURA_NAMES, start=1)]
+        suras = [
+            Sura(number, name) for number, name in enumerate(self.sura_names, start=1)
+        ]
         semaphore = asyncio.BoundedSemaphore(MAX_CONCURRENT_DOWNLOADS)
 
         async with httpx.AsyncClient(verify=False) as client:
@@ -142,9 +36,7 @@ class QuranDownloader:
                 for sura in suras
             ]
 
-            for task in tqdm.tqdm(
-                asyncio.as_completed(tasks), desc="Downloading Quran Suras"
-            ):
+            for task in tqdm.tqdm(asyncio.as_completed(tasks)):
                 sura = await task
                 print(f"Downloaded Sura {sura.number}: {sura.name}")
 
@@ -172,9 +64,15 @@ class Sura:
 async def main():
     directory = Path("/home/loai/Quran")
     directory.mkdir(parents=True, exist_ok=True)
-    url = "https://download.quran.islamway.net/quran3/696/"
+    url = os.getenv("QURAN_BASE_URL")
+    if not url:
+        raise ValueError("QURAN_BASE_URL is not set in the environment")
 
-    downloader = QuranDownloader(url, directory)
+    # Load sura names from external JSON file
+    with open(Path(__file__).parent / "sura_names.json", encoding="utf-8") as f:
+        sura_names = json.load(f)
+
+    downloader = QuranDownloader(url, directory, sura_names)
     await downloader.download()
 
 
