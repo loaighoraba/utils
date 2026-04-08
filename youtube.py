@@ -1,10 +1,12 @@
 from pathlib import Path
 import subprocess
 import os
-from dotenv import load_dotenv
 
+import json
 
-load_dotenv()
+# Load configuration from resources.json
+with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
+    config = json.load(f)
 
 
 def download_playlists(playlists: list[str], base_directory: str):
@@ -23,10 +25,10 @@ def download_playlists(playlists: list[str], base_directory: str):
             print(f"Failed to download playlist: {index}: {playlist}. Error: {e}")
 
 
-playlists_csv = os.getenv("YOUTUBE_PLAYLIST_URLS", "")
-playlists = [url.strip() for url in playlists_csv.split(",") if url.strip()]
+# Get playlists from config
+playlists = config.get("youtube_playlist_urls", [])
 if not playlists:
-    raise ValueError("YOUTUBE_PLAYLIST_URLS is not set in the environment")
+    raise ValueError("youtube_playlist_urls is not set in resources.json")
 # Replace with your desired base directory
 base_directory = "/home/loai/Youtube playlists/"
 

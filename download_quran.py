@@ -5,17 +5,11 @@ import asyncio
 import httpx
 
 import tqdm
-import os
 import json
-from dotenv import load_dotenv
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-
 MAX_CONCURRENT_DOWNLOADS = 10
-
-
-load_dotenv()
 
 
 class QuranDownloader:
@@ -64,9 +58,14 @@ class Sura:
 async def main():
     directory = Path("/home/loai/Quran")
     directory.mkdir(parents=True, exist_ok=True)
-    url = os.getenv("QURAN_BASE_URL")
+
+    # Load configuration from resources.json
+    with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
+        config = json.load(f)
+
+    url = config.get("quran_base_url")
     if not url:
-        raise ValueError("QURAN_BASE_URL is not set in the environment")
+        raise ValueError("quran_base_url is not set in resources.json")
 
     # Load sura names from external JSON file
     with open(Path(__file__).parent / "sura_names.json", encoding="utf-8") as f:
