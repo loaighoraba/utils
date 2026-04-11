@@ -24,7 +24,7 @@ def update_mp3_tags(directory: Path, *, album, artist):
             print(f"Failed to update tags for: {mp3_file.name}. Error: {e}")
 
 
-directory = Path("/home/loai/القرآن الكريم/محمود خليل الحصري/بمد المنفصل/")
+directory = Path("/home/loai/Quran")
 album = "بمد المنفصل"
 artist = "محمود خليل الحصري"
 
